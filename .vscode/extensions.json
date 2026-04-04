@@ -1,0 +1,30 @@
+{
+  // VS Code workspace recommended extensions for sysml-start
+  // -------------------------------------------------------------------------
+  // To install: open Extensions panel (Ctrl+Shift+X) and search @recommended
+  // -------------------------------------------------------------------------
+  "recommendations": [
+    // Markdown authoring and preview
+    "yzhang.markdown-all-in-one",
+    "bierner.markdown-preview-github-styles",
+
+    // General text / whitespace utilities
+    "editorconfig.editorconfig",
+    "streetsidesoftware.code-spell-checker",
+
+    // Git and collaboration
+    "eamodio.gitlens",
+
+    // Shell script support
+    "timonwong.shellcheck",
+
+    // YAML support (for GitHub Actions workflows)
+    "redhat.vscode-yaml",
+
+    // TODO: Add a SysML2 extension here when one becomes available, e.g.:
+    //   "some-publisher.sysml2-language-support"
+    // Check the VS Code Marketplace for the latest SysML2 extension.
+    // The SysML v2 API & Services Pilot Implementation may provide a
+    // language server or VS Code extension in the future.
+  ]
+}

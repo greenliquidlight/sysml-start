@@ -1,0 +1,76 @@
+{
+  // VS Code workspace tasks for the sysml-start modeling workflow
+  // Run via: Ctrl+Shift+P → Tasks: Run Task
+  "version": "2.0.0",
+  "tasks": [
+    // -----------------------------------------------------------------------
+    // Validate Model
+    // -----------------------------------------------------------------------
+    {
+      "label": "Validate Model",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/validate-model",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+
+    // -----------------------------------------------------------------------
+    // Render Diagrams
+    // -----------------------------------------------------------------------
+    {
+      "label": "Render Diagrams",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/render-diagrams",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+
+    // -----------------------------------------------------------------------
+    // Build Docs
+    // -----------------------------------------------------------------------
+    {
+      "label": "Build Docs",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/build-docs",
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+
+    // -----------------------------------------------------------------------
+    // Build All  (Validate → Render → Build Docs in sequence)
+    // -----------------------------------------------------------------------
+    {
+      "label": "Build All",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Validate Model",
+        "Render Diagrams",
+        "Build Docs"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
