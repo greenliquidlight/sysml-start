@@ -1,0 +1,55 @@
+# sysml-start — .gitignore
+
+# ---------------------------------------------------------------------------
+# OS and editor artifacts
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.idea/
+*.iml
+
+# ---------------------------------------------------------------------------
+# VS Code (workspace settings are committed; ignore user-specific overrides)
+# ---------------------------------------------------------------------------
+.vscode/*.log
+
+# ---------------------------------------------------------------------------
+# Generated docs output
+# NOTE: generated/diagrams/ is intentionally NOT ignored so that rendered
+# placeholder SVGs are committed and documentation renders without running
+# scripts locally. If you switch to a fully on-demand render workflow,
+# you can add `generated/` here and remove the diagrams from git.
+# ---------------------------------------------------------------------------
+generated/docs/
+
+# ---------------------------------------------------------------------------
+# Build and dependency artifacts
+# ---------------------------------------------------------------------------
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.log
+dist/
+build/
+target/
+
+# ---------------------------------------------------------------------------
+# Java (SysML2 tooling often ships as JARs)
+# ---------------------------------------------------------------------------
+*.class
+*.jar
+hs_err_pid*
+
+# ---------------------------------------------------------------------------
+# Temporary files
+# ---------------------------------------------------------------------------
+tmp/
+temp/
+*.tmp
+*.bak

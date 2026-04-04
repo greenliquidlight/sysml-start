@@ -1,0 +1,84 @@
+#!/usr/bin/env sh
+# scripts/validate-model
+#
+# Validates SysML2 model files in the model/ directory.
+#
+# Current implementation: file-existence check (placeholder).
+# Exit codes:
+#   0 — all expected model files present (validation would proceed)
+#   1 — one or more expected model files are missing
+#
+# TODO: Replace or extend the placeholder checks below with a real SysML2
+#       validator command, for example:
+#
+#   sysml2-cli validate model/requirements.sysml model/context.sysml ...
+#
+# or pipe all .sysml files to your tool of choice.
+
+set -e
+
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+MODEL_DIR="$REPO_ROOT/model"
+
+echo "=== SysML2 Model Validation ==="
+echo "Model directory: $MODEL_DIR"
+echo ""
+
+# ---------------------------------------------------------------------------
+# Expected model files
+# ---------------------------------------------------------------------------
+EXPECTED_FILES="
+  model/requirements.sysml
+  model/context.sysml
+  model/workflow.sysml
+  model/views/context-view.sysml
+  model/views/artifact-flow-view.sysml
+"
+
+MISSING=0
+FILE_COUNT=0
+
+for rel_path in $EXPECTED_FILES; do
+    # trim leading/trailing whitespace from heredoc lines
+    rel_path="$(echo "$rel_path" | tr -d ' ')"
+    [ -z "$rel_path" ] && continue
+
+    abs_path="$REPO_ROOT/$rel_path"
+    FILE_COUNT=$((FILE_COUNT + 1))
+    if [ -f "$abs_path" ]; then
+        echo "  [OK]      $rel_path"
+    else
+        echo "  [MISSING] $rel_path"
+        MISSING=$((MISSING + 1))
+    fi
+done
+
+echo ""
+
+if [ "$MISSING" -gt 0 ]; then
+    echo "ERROR: $MISSING model file(s) missing. Validation failed."
+    exit 1
+fi
+
+echo "File existence check passed ($FILE_COUNT files found)."
+echo ""
+
+# ---------------------------------------------------------------------------
+# TODO: Real SysML2 validation
+# ---------------------------------------------------------------------------
+# Uncomment and adapt one of the following once you have a real validator:
+#
+# Option A — SysML2 Pilot Implementation CLI:
+#   java -jar /path/to/sysml2-cli.jar validate \
+#       "$MODEL_DIR/requirements.sysml" \
+#       "$MODEL_DIR/context.sysml" \
+#       "$MODEL_DIR/workflow.sysml" \
+#       "$MODEL_DIR/views/context-view.sysml" \
+#       "$MODEL_DIR/views/artifact-flow-view.sysml"
+#
+# Option B — Custom validator script:
+#   find "$MODEL_DIR" -name '*.sysml' | xargs /path/to/your-validator
+#
+# ---------------------------------------------------------------------------
+
+echo "Validation complete (placeholder — wire to real validator per TODO above)."

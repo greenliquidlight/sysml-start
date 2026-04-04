@@ -1,0 +1,55 @@
+name: Build Docs
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  build:
+    name: Render Diagrams and Build Documentation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x scripts/render-diagrams scripts/build-docs
+
+      - name: Render diagrams
+        run: scripts/render-diagrams
+
+      - name: Build docs
+        run: scripts/build-docs
+
+      # Upload generated artifacts so they are accessible from the workflow run
+      - name: Upload generated diagrams
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-diagrams
+          path: generated/diagrams/
+          if-no-files-found: warn
+
+      - name: Upload generated docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-docs
+          path: generated/docs/
+          if-no-files-found: warn
+
+      # TODO: Add real SysML2 rendering tool installation here before the
+      #       render-diagrams step, for example:
+      #
+      #   - name: Install SysML2 CLI
+      #     run: |
+      #       # Install your SysML2 rendering tooling here
+      #       # e.g.: wget https://example.com/sysml2-cli.jar -O /usr/local/bin/sysml2-cli.jar
+      #
+      # TODO: For PDF/docx output, install pandoc before the build-docs step:
+      #
+      #   - name: Install pandoc
+      #     run: sudo apt-get install -y pandoc
