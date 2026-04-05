@@ -1,84 +1,142 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 # scripts/validate-model
 #
-# Validates SysML2 model files in the model/ directory.
+# Validates all SysML2 model files using the OMG SysML v2 Pilot Implementation
+# interactive kernel (SysMLInteractive).
 #
-# Current implementation: file-existence check (placeholder).
+# Run scripts/setup-tools first to download the kernel JAR and library.
+#
+# All five model files are loaded into a single JVM session in dependency
+# order so that cross-file imports resolve correctly:
+#
+#   requirements.sysml  (no model imports)
+#   context.sysml       (no model imports)
+#   workflow.sysml      (imports WorkflowContext::*)
+#   views/context-view.sysml        (imports WorkflowContext::*)
+#   views/artifact-flow-view.sysml  (imports WorkflowContext::*, WorkflowBehavior::*)
+#
+# Each file is wrapped in the REPL's multi-line delimiter (a bare % on its
+# own line) so the entire file is parsed as a single SysML element.
+#
 # Exit codes:
-#   0 — all expected model files present (validation would proceed)
-#   1 — one or more expected model files are missing
-#
-# TODO: Replace or extend the placeholder checks below with a real SysML2
-#       validator command, for example:
-#
-#   sysml2-cli validate model/requirements.sysml model/context.sysml ...
-#
-# or pipe all .sysml files to your tool of choice.
+#   0 — all files loaded without errors
+#   1 — one or more files produced errors, or the JAR is not set up
 
-set -e
+set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-MODEL_DIR="$REPO_ROOT/model"
+TOOLS_DIR="$REPO_ROOT/tools"
+KERNEL_DIR="$TOOLS_DIR/sysml-kernel"
 
 echo "=== SysML2 Model Validation ==="
-echo "Model directory: $MODEL_DIR"
 echo ""
 
 # ---------------------------------------------------------------------------
-# Expected model files
+# Locate JAR and library
 # ---------------------------------------------------------------------------
-EXPECTED_FILES="
-  model/requirements.sysml
-  model/context.sysml
-  model/workflow.sysml
-  model/views/context-view.sysml
-  model/views/artifact-flow-view.sysml
-"
+JAR=$(ls "$KERNEL_DIR/sysml/"*-all.jar 2>/dev/null | head -1)
+LIB="$KERNEL_DIR/sysml/sysml.library"
 
-MISSING=0
-FILE_COUNT=0
-
-for rel_path in $EXPECTED_FILES; do
-    # trim leading/trailing whitespace from heredoc lines
-    rel_path="$(echo "$rel_path" | tr -d ' ')"
-    [ -z "$rel_path" ] && continue
-
-    abs_path="$REPO_ROOT/$rel_path"
-    FILE_COUNT=$((FILE_COUNT + 1))
-    if [ -f "$abs_path" ]; then
-        echo "  [OK]      $rel_path"
-    else
-        echo "  [MISSING] $rel_path"
-        MISSING=$((MISSING + 1))
-    fi
-done
-
-echo ""
-
-if [ "$MISSING" -gt 0 ]; then
-    echo "ERROR: $MISSING model file(s) missing. Validation failed."
+if [ -z "$JAR" ] || [ ! -d "$LIB" ]; then
+    echo "ERROR: OMG SysML v2 kernel not found."
+    echo "  Run:  scripts/setup-tools"
     exit 1
 fi
 
-echo "File existence check passed ($FILE_COUNT files found)."
+# ---------------------------------------------------------------------------
+# Ordered list of model files to validate
+# ---------------------------------------------------------------------------
+MODEL_FILES=(
+    "model/requirements.sysml"
+    "model/context.sysml"
+    "model/workflow.sysml"
+    "model/views/context-view.sysml"
+    "model/views/artifact-flow-view.sysml"
+)
+
+# Verify all expected files are present before touching the JVM
+MISSING=0
+for REL in "${MODEL_FILES[@]}"; do
+    if [ ! -f "$REPO_ROOT/$REL" ]; then
+        echo "  [MISSING] $REL"
+        MISSING=$((MISSING + 1))
+    fi
+done
+if [ "$MISSING" -gt 0 ]; then
+    echo ""
+    echo "ERROR: $MISSING model file(s) missing."
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Build the REPL input stream:
+#   Each file is wrapped in the multi-line delimiter (bare % lines) so the
+#   REPL collects the entire file before parsing it.
+# ---------------------------------------------------------------------------
+build_repl_input() {
+    for REL in "${MODEL_FILES[@]}"; do
+        printf '%s\n' '%'         # open multi-line block
+        cat "$REPO_ROOT/$REL"
+        printf '%s\n' '%'         # close multi-line block
+    done
+    printf '%s\n' '%exit'
+}
+
+echo "Loading ${#MODEL_FILES[@]} model files (first run loads the standard library — may take 10-30 s)..."
 echo ""
 
-# ---------------------------------------------------------------------------
-# TODO: Real SysML2 validation
-# ---------------------------------------------------------------------------
-# Uncomment and adapt one of the following once you have a real validator:
-#
-# Option A — SysML2 Pilot Implementation CLI:
-#   java -jar /path/to/sysml2-cli.jar validate \
-#       "$MODEL_DIR/requirements.sysml" \
-#       "$MODEL_DIR/context.sysml" \
-#       "$MODEL_DIR/workflow.sysml" \
-#       "$MODEL_DIR/views/context-view.sysml" \
-#       "$MODEL_DIR/views/artifact-flow-view.sysml"
-#
-# Option B — Custom validator script:
-#   find "$MODEL_DIR" -name '*.sysml' | xargs /path/to/your-validator
-#
-# ---------------------------------------------------------------------------
+# Run JVM; stderr carries JVM/module-system warnings — suppress them here
+OUTPUT=$(build_repl_input | java -cp "$JAR" \
+    org.omg.sysml.interactive.SysMLInteractive "$LIB" 2>/dev/null)
 
-echo "Validation complete (placeholder — wire to real validator per TODO above)."
+# ---------------------------------------------------------------------------
+# Parse results
+# SysMLInteractiveResult.toString() includes the Xtext Issue.toString()
+# for each error/warning on a line of its own.  Xtext IssueImpl fields
+# contain the literal text "severity=ERROR" for semantic errors, or the
+# issue is flagged by isSyntaxError (included in formatList as-is).
+# We also catch thrown-exception output and the VizResult error prefix.
+# ---------------------------------------------------------------------------
+ERRORS=0
+COUNTER=0
+
+while IFS= read -r LINE; do
+    # Strip the REPL counter prefix ("1> ", "12> ", etc.)
+    CLEAN=$(printf '%s' "$LINE" | sed 's/^[0-9][0-9]*> //')
+
+    # Every line after the initial header corresponds to one model file
+    # processed; lines with no content are the element tree header or blank
+    if printf '%s' "$CLEAN" | grep -qiE \
+        'severity=ERROR|isSyntaxError=true|ERROR:|Exception.*at org\.' 2>/dev/null; then
+        # Map counter to file name
+        FILE_IDX=$((COUNTER - 1))
+        if [ "$FILE_IDX" -ge 0 ] && [ "$FILE_IDX" -lt "${#MODEL_FILES[@]}" ]; then
+            FILE_LABEL="${MODEL_FILES[$FILE_IDX]}"
+        else
+            FILE_LABEL="(unknown)"
+        fi
+        echo "  [ERROR] $FILE_LABEL"
+        echo "          $CLEAN"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # Increment file counter when we see a primary REPL prompt
+    if printf '%s' "$LINE" | grep -qE '^[0-9]+> '; then
+        COUNTER=$((COUNTER + 1))
+    fi
+done <<< "$OUTPUT"
+
+# Report per-file OK or ERROR based on file list vs errors found
+if [ "$ERRORS" -eq 0 ]; then
+    for REL in "${MODEL_FILES[@]}"; do
+        echo "  [OK]  $REL"
+    done
+fi
+
+echo ""
+if [ "$ERRORS" -gt 0 ]; then
+    echo "Validation FAILED: $ERRORS error(s) found."
+    exit 1
+else
+    echo "All ${#MODEL_FILES[@]} files validated without errors."
+fi

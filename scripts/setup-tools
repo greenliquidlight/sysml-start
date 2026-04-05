@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# scripts/setup-tools
+#
+# Downloads and installs prerequisites for the OMG SysML v2 rendering pipeline:
+#
+#   1. Checks for Java >= 21 (required by the OMG kernel)
+#   2. Installs GraphViz via Homebrew if not present
+#   3. Installs PlantUML via Homebrew if not present
+#   4. Downloads jupyter-sysml-kernel-<VERSION>.zip from the OMG pilot releases
+#   5. Extracts it to tools/sysml-kernel/
+#
+# After running this script once, scripts/validate-model and
+# scripts/render-diagrams will locate the extracted JAR and library
+# automatically.
+#
+# Exit codes:
+#   0 — setup complete and verified
+#   1 — a required prerequisite could not be satisfied
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Version pins — update both when upgrading the OMG pilot
+# ---------------------------------------------------------------------------
+KERNEL_VER="0.57.0"
+RELEASE_TAG="2026-02"
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+TOOLS_DIR="$REPO_ROOT/tools"
+ZIP_FILE="$TOOLS_DIR/jupyter-sysml-kernel-${KERNEL_VER}.zip"
+KERNEL_DIR="$TOOLS_DIR/sysml-kernel"
+DOWNLOAD_URL="https://github.com/Systems-Modeling/SysML-v2-Pilot-Implementation/releases/download/${RELEASE_TAG}/jupyter-sysml-kernel-${KERNEL_VER}.zip"
+
+echo "=== SysML v2 Tool Setup ==="
+echo ""
+
+# ---------------------------------------------------------------------------
+# 1. Java check (>= 21 required by the OMG kernel)
+# ---------------------------------------------------------------------------
+if ! command -v java >/dev/null 2>&1; then
+    echo "ERROR: java not found."
+    echo "  Install OpenJDK 21+, e.g.:  brew install openjdk@21"
+    exit 1
+fi
+JAVA_VER=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d. -f1)
+if [ "${JAVA_VER:-0}" -lt 21 ] 2>/dev/null; then
+    echo "ERROR: Java $JAVA_VER found but >= 21 is required."
+    exit 1
+fi
+echo "[OK] Java $(java -version 2>&1 | head -1)"
+
+# ---------------------------------------------------------------------------
+# 2. GraphViz
+# ---------------------------------------------------------------------------
+if ! command -v dot >/dev/null 2>&1; then
+    echo "Installing GraphViz..."
+    case "$(uname -s)" in
+        Darwin) brew install graphviz ;;
+        Linux)  sudo apt-get install -y graphviz ;;
+        *)      echo "ERROR: cannot auto-install GraphViz on $(uname -s). Install it manually." && exit 1 ;;
+    esac
+fi
+echo "[OK] GraphViz $(dot -V 2>&1 | head -1)"
+
+# ---------------------------------------------------------------------------
+# 3. Download kernel ZIP
+# ---------------------------------------------------------------------------
+mkdir -p "$TOOLS_DIR"
+
+if [ ! -f "$ZIP_FILE" ]; then
+    echo ""
+    echo "Downloading jupyter-sysml-kernel-${KERNEL_VER}.zip (~85 MB)..."
+    curl -L --progress-bar -o "$ZIP_FILE" "$DOWNLOAD_URL"
+    echo ""
+fi
+echo "[OK] Kernel ZIP: $ZIP_FILE"
+
+# ---------------------------------------------------------------------------
+# 5. Extract
+# ---------------------------------------------------------------------------
+if [ ! -d "$KERNEL_DIR" ]; then
+    echo "Extracting..."
+    mkdir -p "$KERNEL_DIR"
+    unzip -q "$ZIP_FILE" -d "$KERNEL_DIR"
+fi
+echo "[OK] Kernel dir: $KERNEL_DIR"
+
+# ---------------------------------------------------------------------------
+# 6. Verify expected artifacts
+# ---------------------------------------------------------------------------
+JAR=$(ls "$KERNEL_DIR/sysml/"*-all.jar 2>/dev/null | head -1)
+LIB="$KERNEL_DIR/sysml/sysml.library"
+
+if [ -z "$JAR" ]; then
+    echo "ERROR: Could not find *-all.jar under $KERNEL_DIR/sysml/"
+    echo "  Try removing $KERNEL_DIR and re-running this script."
+    exit 1
+fi
+if [ ! -d "$LIB" ]; then
+    echo "ERROR: sysml.library not found at $LIB"
+    echo "  Try removing $KERNEL_DIR and re-running this script."
+    exit 1
+fi
+echo "[OK] JAR:     $JAR"
+echo "[OK] Library: $LIB"
+
+# ---------------------------------------------------------------------------
+# 7. Compile SysMLRender.java (rendering helper — uses PlantUML bundled in JAR)
+# ---------------------------------------------------------------------------
+SYSML_RENDER_SRC="$TOOLS_DIR/SysMLRender.java"
+SYSML_RENDER_CLS="$TOOLS_DIR/SysMLRender.class"
+
+if [ ! -f "$SYSML_RENDER_CLS" ] || [ "$SYSML_RENDER_SRC" -nt "$SYSML_RENDER_CLS" ]; then
+    echo "Compiling SysMLRender.java..."
+    javac -cp "$JAR" -d "$TOOLS_DIR" "$SYSML_RENDER_SRC"
+fi
+echo "[OK] SysMLRender.class"
+
+echo ""
+echo "Setup complete."
+echo "  Validate : scripts/validate-model"
+echo "  Render   : scripts/render-diagrams"

@@ -1,153 +1,95 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 # scripts/render-diagrams
 #
-# Renders SysML2 view definitions into SVG diagram files.
+# Renders SysML2 model elements to SVG using the OMG SysML v2 Pilot
+# Implementation JAR (SysMLInteractive) and tools/SysMLRender.java.
 #
-# Current implementation: generates placeholder SVGs with visible labels.
-# Output directory: generated/diagrams/
+# Pipeline:
+#   1. All model files are loaded into SysMLInteractive in dependency order.
+#   2. Three %viz commands generate PlantUML markup for the key elements.
+#   3. The REPL output is piped to SysMLRender, which extracts each
+#      @startuml...@enduml block and renders it to SVG using the PlantUML
+#      library bundled in the same JAR — ensuring that the skin/sysmlbw.skin
+#      file (also bundled there) is resolved from the classloader.
+#
+# Run scripts/setup-tools first to download the JAR and compile SysMLRender.
+#
+# Output:
+#   generated/diagrams/context.svg        — WorkflowContext::workflowContext
+#   generated/diagrams/artifact-flow.svg  — WorkflowBehavior
+#   generated/diagrams/requirements.svg   — WorkflowRequirements
 #
 # Exit codes:
-#   0 — all diagrams generated successfully
-#   1 — output directory could not be created
-#
-# TODO: Replace placeholder SVG generation with calls to a real SysML2
-#       rendering tool, for example:
-#
-#   sysml2-cli render \
-#       --view model/views/context-view.sysml \
-#       --output generated/diagrams/context.svg
-#
-# or a PlantUML / Graphviz bridge driven by your .sysml view definitions.
+#   0 — all diagrams rendered successfully
+#   1 — JAR / compiled helper not found, or a diagram failed to render
 
-set -e
+set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+TOOLS_DIR="$REPO_ROOT/tools"
+KERNEL_DIR="$TOOLS_DIR/sysml-kernel"
 DIAGRAMS_DIR="$REPO_ROOT/generated/diagrams"
 
 echo "=== SysML2 Diagram Rendering ==="
-echo "Output directory: $DIAGRAMS_DIR"
 echo ""
 
-# Ensure output directory exists
+# ---------------------------------------------------------------------------
+# Locate JAR, library, and compiled renderer
+# ---------------------------------------------------------------------------
+JAR=$(ls "$KERNEL_DIR/sysml/"*-all.jar 2>/dev/null | head -1)
+LIB="$KERNEL_DIR/sysml/sysml.library"
+
+if [ -z "$JAR" ] || [ ! -d "$LIB" ]; then
+    echo "ERROR: OMG SysML v2 kernel not found."
+    echo "  Run:  scripts/setup-tools"
+    exit 1
+fi
+
+if [ ! -f "$TOOLS_DIR/SysMLRender.class" ]; then
+    echo "ERROR: SysMLRender.class not found."
+    echo "  Run:  scripts/setup-tools"
+    exit 1
+fi
+
 mkdir -p "$DIAGRAMS_DIR"
 
 # ---------------------------------------------------------------------------
-# Helper: write_placeholder_svg <output_path> <title> <subtitle>
-# Generates a minimal valid SVG with visible labels.
+# Build the REPL input stream: load all model files then request three
+# diagrams.  Each file is wrapped in bare % delimiters (multi-line mode)
+# so the entire file is parsed as a single SysML element.
 # ---------------------------------------------------------------------------
-write_placeholder_svg() {
-    out_path="$1"
-    title="$2"
-    subtitle="$3"
-
-    cat > "$out_path" <<SVG
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg"
-     width="600" height="400" viewBox="0 0 600 400">
-
-  <!-- Background -->
-  <rect width="600" height="400" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
-
-  <!-- Border -->
-  <rect x="10" y="10" width="580" height="380"
-        fill="none" stroke="#6c757d" stroke-width="1.5" stroke-dasharray="6,3"/>
-
-  <!-- Title bar -->
-  <rect x="10" y="10" width="580" height="48" fill="#343a40"/>
-  <text x="300" y="40" font-family="sans-serif" font-size="16"
-        font-weight="bold" fill="white" text-anchor="middle">$title</text>
-
-  <!-- Placeholder notice -->
-  <text x="300" y="90" font-family="sans-serif" font-size="12"
-        fill="#6c757d" text-anchor="middle">[ Placeholder Diagram ]</text>
-  <text x="300" y="110" font-family="sans-serif" font-size="11"
-        fill="#6c757d" text-anchor="middle">$subtitle</text>
-  <text x="300" y="130" font-family="sans-serif" font-size="11"
-        fill="#6c757d" text-anchor="middle">Replace with real SysML2 renderer output</text>
-
-  <!-- Divider -->
-  <line x1="40" y1="145" x2="560" y2="145" stroke="#dee2e6" stroke-width="1"/>
-
-  <!-- Stub nodes — context diagram -->
-  <rect x="40"  y="165" width="120" height="40" rx="6" fill="#e9ecef" stroke="#adb5bd"/>
-  <text x="100" y="190" font-family="sans-serif" font-size="11"
-        text-anchor="middle" fill="#212529">ModelAuthor</text>
-
-  <rect x="200" y="165" width="120" height="40" rx="6" fill="#cfe2ff" stroke="#9ec5fe"/>
-  <text x="260" y="190" font-family="sans-serif" font-size="11"
-        text-anchor="middle" fill="#084298">ModelRepository</text>
-
-  <rect x="360" y="165" width="120" height="40" rx="6" fill="#d1e7dd" stroke="#a3cfbb"/>
-  <text x="420" y="190" font-family="sans-serif" font-size="11"
-        text-anchor="middle" fill="#0a3622">ValidationTool</text>
-
-  <rect x="40"  y="255" width="120" height="40" rx="6" fill="#d1e7dd" stroke="#a3cfbb"/>
-  <text x="100" y="280" font-family="sans-serif" font-size="11"
-        text-anchor="middle" fill="#0a3622">ViewRenderer</text>
-
-  <rect x="200" y="255" width="120" height="40" rx="6" fill="#d1e7dd" stroke="#a3cfbb"/>
-  <text x="260" y="280" font-family="sans-serif" font-size="11"
-        text-anchor="middle" fill="#0a3622">DocBuilder</text>
-
-  <rect x="360" y="255" width="120" height="40" rx="6" fill="#fff3cd" stroke="#ffda6a"/>
-  <text x="420" y="280" font-family="sans-serif" font-size="11"
-        text-anchor="middle" fill="#664d03">Reviewer</text>
-
-  <!-- Stub arrows -->
-  <line x1="160" y1="185" x2="200" y2="185" stroke="#6c757d" stroke-width="1.5"
-        marker-end="url(#arrow)"/>
-  <line x1="320" y1="185" x2="360" y2="185" stroke="#6c757d" stroke-width="1.5"
-        marker-end="url(#arrow)"/>
-  <line x1="100" y1="205" x2="100" y2="255" stroke="#6c757d" stroke-width="1.5"
-        marker-end="url(#arrow)"/>
-  <line x1="260" y1="205" x2="260" y2="255" stroke="#6c757d" stroke-width="1.5"
-        marker-end="url(#arrow)"/>
-  <line x1="320" y1="270" x2="360" y2="270" stroke="#6c757d" stroke-width="1.5"
-        marker-end="url(#arrow)"/>
-
-  <!-- Arrow marker -->
-  <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8"
-            refX="6" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L8,3 z" fill="#6c757d"/>
-    </marker>
-  </defs>
-
-  <!-- Footer -->
-  <text x="300" y="385" font-family="sans-serif" font-size="9"
-        fill="#adb5bd" text-anchor="middle">
-    Generated by scripts/render-diagrams — sysml-start
-  </text>
-</svg>
-SVG
-
-    echo "  [OK] $(basename "$out_path")"
+build_repl_input() {
+    for REL in \
+        "model/requirements.sysml" \
+        "model/context.sysml" \
+        "model/workflow.sysml" \
+        "model/views/context-view.sysml" \
+        "model/views/artifact-flow-view.sysml"; do
+        printf '%s\n' '%'
+        cat "$REPO_ROOT/$REL"
+        printf '%s\n' '%'
+    done
+    printf '%s\n' '%viz WorkflowContext::workflowContext'  # → context.svg
+    printf '%s\n' '%viz WorkflowBehavior'                  # → artifact-flow.svg
+    printf '%s\n' '%viz WorkflowRequirements'              # → requirements.svg
+    printf '%s\n' '%exit'
 }
 
 # ---------------------------------------------------------------------------
-# Generate context diagram
+# Single JVM invocation: load model → generate PlantUML → render SVGs
+#
+# SysMLRender reads the REPL stdout, extracts @startuml blocks in order,
+# and writes each to the corresponding output file.
 # ---------------------------------------------------------------------------
-# TODO: Replace with real SysML2 renderer call:
-#   sysml2-cli render \
-#       --view "$REPO_ROOT/model/views/context-view.sysml" \
-#       --output "$DIAGRAMS_DIR/context.svg"
-write_placeholder_svg \
-    "$DIAGRAMS_DIR/context.svg" \
-    "SysML2 Workflow — Context Diagram" \
-    "Source: model/views/context-view.sysml"
+echo "Loading model and generating diagrams..."
+echo "(First run loads the standard library — expect ~15-30 s)"
+echo ""
 
-# ---------------------------------------------------------------------------
-# Generate artifact flow diagram
-# ---------------------------------------------------------------------------
-# TODO: Replace with real SysML2 renderer call:
-#   sysml2-cli render \
-#       --view "$REPO_ROOT/model/views/artifact-flow-view.sysml" \
-#       --output "$DIAGRAMS_DIR/artifact-flow.svg"
-write_placeholder_svg \
-    "$DIAGRAMS_DIR/artifact-flow.svg" \
-    "SysML2 Workflow — Artifact Flow Diagram" \
-    "Source: model/views/artifact-flow-view.sysml"
+build_repl_input \
+    | java -cp "$JAR" \
+        org.omg.sysml.interactive.SysMLInteractive "$LIB" 2>/dev/null \
+    | java -cp "$JAR:$TOOLS_DIR" SysMLRender "$DIAGRAMS_DIR" \
+        context.svg artifact-flow.svg requirements.svg
 
 echo ""
-echo "Rendering complete. Output: $DIAGRAMS_DIR"
-echo "(Placeholder SVGs generated — wire to real renderer per TODO comments above.)"
+echo "All diagrams rendered to:  $DIAGRAMS_DIR"

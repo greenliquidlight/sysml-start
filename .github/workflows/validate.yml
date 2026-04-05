@@ -17,25 +17,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Make validate script executable
-        run: chmod +x scripts/validate-model
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install GraphViz
+        run: sudo apt-get install -y graphviz
+
+      - name: Make scripts executable
+        run: chmod +x scripts/setup-tools scripts/validate-model
+
+      - name: Download OMG kernel and compile SysMLRender
+        run: scripts/setup-tools
 
       - name: Run model validation
         run: scripts/validate-model
-
-      # TODO: Add real SysML2 validator installation and invocation here.
-      # For example, to install the SysML2 Pilot Implementation CLI:
-      #
-      #   - name: Install SysML2 CLI
-      #     run: |
-      #       # Download or install your SysML2 tooling here
-      #       # e.g.: wget https://example.com/sysml2-cli.jar -O /usr/local/bin/sysml2-cli.jar
-      #
-      #   - name: Validate with SysML2 CLI
-      #     run: |
-      #       java -jar /usr/local/bin/sysml2-cli.jar validate \
-      #           model/requirements.sysml \
-      #           model/context.sysml \
-      #           model/workflow.sysml \
-      #           model/views/context-view.sysml \
-      #           model/views/artifact-flow-view.sysml

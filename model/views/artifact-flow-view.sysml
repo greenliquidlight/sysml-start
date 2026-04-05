@@ -14,8 +14,8 @@
 
 package ArtifactFlowView {
 
-    import WorkflowContext::*;
-    import WorkflowBehavior::*;
+    public import WorkflowContext::*;
+    public import WorkflowBehavior::*;
 
     // -------------------------------------------------------------------------
     // View definition
