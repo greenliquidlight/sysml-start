@@ -26,6 +26,14 @@ jobs:
       - name: Install GraphViz
         run: sudo apt-get install -y graphviz
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Sphinx dependencies
+        run: pip install -r docs/requirements.txt
+
       - name: Make scripts executable
         run: chmod +x scripts/setup-tools scripts/render-diagrams scripts/build-docs
 
@@ -51,3 +59,63 @@ jobs:
           name: generated-docs
           path: generated/docs/
           if-no-files-found: warn
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install GraphViz
+        run: sudo apt-get install -y graphviz
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Sphinx dependencies
+        run: pip install -r docs/requirements.txt
+
+      - name: Make scripts executable
+        run: chmod +x scripts/setup-tools scripts/render-diagrams scripts/build-docs
+
+      - name: Download OMG kernel and compile SysMLRender
+        run: scripts/setup-tools
+
+      - name: Render diagrams
+        run: scripts/render-diagrams
+
+      - name: Build docs
+        run: scripts/build-docs
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: generated/docs/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+

@@ -67,9 +67,16 @@ Generated SVGs are committed to the repository in `generated/diagrams/` so that 
 **VS Code Task:** Build Docs
 **Output:** `generated/docs/index.html`
 
-The build-docs script assembles Markdown documents and the generated SVG diagrams into a navigable HTML output. Currently it creates a simple HTML index page.
+The build-docs script builds a navigable HTML documentation site from the Markdown sources using
+[Sphinx](https://www.sphinx-doc.org/) with the [MyST parser](https://myst-parser.readthedocs.io/)
+and the `sphinx_rtd_theme`. The generated site includes a table of contents, search, and correctly
+rendered SVG diagrams embedded via standard Markdown image links.
 
-**TODO:** Integrate pandoc (or mkdocs, sphinx, or similar) to produce polished HTML, PDF, and/or docx output from the Markdown sources.
+Dependencies are declared in `docs/requirements.txt` and installed by `scripts/setup-tools`.
+
+The repository also includes a `.readthedocs.yaml` configuration file. Connecting the repository
+to [Read the Docs](https://readthedocs.io/) will build and host the documentation automatically on
+every push, with versioned builds per branch and tag.
 
 ---
 

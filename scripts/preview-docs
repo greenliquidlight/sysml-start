@@ -1,0 +1,66 @@
+#!/usr/bin/env sh
+# scripts/preview-docs
+#
+# Builds the Sphinx documentation locally and opens the result in a browser.
+# Runs scripts/render-diagrams first if no SVGs are present.
+#
+# Prerequisites:
+#   pip install -r docs/requirements.txt   (or run scripts/setup-tools once)
+#
+# Exit codes:
+#   0 — preview launched
+#   1 — a required tool or source file is missing
+
+set -e
+
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+DIAGRAMS_DIR="$REPO_ROOT/generated/diagrams"
+OUTPUT_DIR="$REPO_ROOT/generated/docs"
+INDEX="$OUTPUT_DIR/index.html"
+
+# ---------------------------------------------------------------------------
+# Verify sphinx-build is available
+# ---------------------------------------------------------------------------
+if ! command -v sphinx-build >/dev/null 2>&1; then
+    echo "ERROR: sphinx-build not found."
+    echo "  Run: pip install -r docs/requirements.txt"
+    echo "  Or:  scripts/setup-tools"
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Auto-render diagrams if not yet generated
+# ---------------------------------------------------------------------------
+if [ ! -f "$DIAGRAMS_DIR/context.svg" ] || [ ! -f "$DIAGRAMS_DIR/artifact-flow.svg" ]; then
+    echo "Diagrams not found — running scripts/render-diagrams first..."
+    "$REPO_ROOT/scripts/render-diagrams"
+    echo ""
+fi
+
+# ---------------------------------------------------------------------------
+# Build HTML docs
+# ---------------------------------------------------------------------------
+echo "=== Building preview docs ==="
+sphinx-build -b html "$REPO_ROOT/docs" "$OUTPUT_DIR" -q
+echo "Built: $INDEX"
+echo ""
+
+# ---------------------------------------------------------------------------
+# Open in browser (macOS, Linux, WSL)
+# ---------------------------------------------------------------------------
+case "$(uname -s)" in
+    Darwin)
+        open "$INDEX" ;;
+    Linux)
+        if command -v xdg-open >/dev/null 2>&1; then
+            xdg-open "$INDEX"
+        elif command -v wslview >/dev/null 2>&1; then
+            wslview "$INDEX"
+        else
+            echo "Could not detect a browser launcher. Open manually:"
+            echo "  $INDEX"
+        fi ;;
+    *)
+        echo "Open in your browser:"
+        echo "  $INDEX" ;;
+esac
