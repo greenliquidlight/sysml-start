@@ -7,7 +7,8 @@
 
 package WorkflowBehavior {
 
-    import WorkflowContext::*;
+    public import WorkflowContext::*;
+    public import ScalarValues::*;
 
     // -------------------------------------------------------------------------
     // Action definitions (workflow steps)
@@ -68,17 +69,17 @@ package WorkflowBehavior {
                Steps are sequential; a failure at any step should be resolved
                before proceeding. */
 
-        action edit     : EditModel;
-        action validate : ValidateModel;
-        action render   : RenderDiagrams;
-        action build    : BuildDocs;
-        action review   : ReviewOutput;
+        action edit         : EditModel;
+        action validate     : ValidateModel;
+        action renderDiags  : RenderDiagrams;
+        action build        : BuildDocs;
+        action review       : ReviewOutput;
 
         // Sequencing via succession (SysML v2 preferred ordering syntax)
-        succession edit then validate;
-        succession validate then render;
-        succession render then build;
-        succession build then review;
+        succession first edit then validate;
+        succession first validate then renderDiags;
+        succession first renderDiags then build;
+        succession first build then review;
 
         // Guard: only proceed past validate if validation passed
         // (Non-zero exit from validate-model script enforces this in CI)

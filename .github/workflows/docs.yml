@@ -17,8 +17,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install GraphViz
+        run: sudo apt-get install -y graphviz
+
       - name: Make scripts executable
-        run: chmod +x scripts/render-diagrams scripts/build-docs
+        run: chmod +x scripts/setup-tools scripts/render-diagrams scripts/build-docs
+
+      - name: Download OMG kernel and compile SysMLRender
+        run: scripts/setup-tools
 
       - name: Render diagrams
         run: scripts/render-diagrams
@@ -26,7 +38,6 @@ jobs:
       - name: Build docs
         run: scripts/build-docs
 
-      # Upload generated artifacts so they are accessible from the workflow run
       - name: Upload generated diagrams
         uses: actions/upload-artifact@v4
         with:
@@ -40,16 +51,3 @@ jobs:
           name: generated-docs
           path: generated/docs/
           if-no-files-found: warn
-
-      # TODO: Add real SysML2 rendering tool installation here before the
-      #       render-diagrams step, for example:
-      #
-      #   - name: Install SysML2 CLI
-      #     run: |
-      #       # Install your SysML2 rendering tooling here
-      #       # e.g.: wget https://example.com/sysml2-cli.jar -O /usr/local/bin/sysml2-cli.jar
-      #
-      # TODO: For PDF/docx output, install pandoc before the build-docs step:
-      #
-      #   - name: Install pandoc
-      #     run: sudo apt-get install -y pandoc

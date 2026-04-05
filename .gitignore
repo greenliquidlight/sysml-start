@@ -27,6 +27,13 @@ desktop.ini
 generated/docs/
 
 # ---------------------------------------------------------------------------
+# OMG SysML v2 Pilot tools (downloaded by scripts/setup-tools, not committed)
+# ---------------------------------------------------------------------------
+tools/sysml-kernel/
+tools/*.zip
+tools/*.class
+
+# ---------------------------------------------------------------------------
 # Build and dependency artifacts
 # ---------------------------------------------------------------------------
 node_modules/

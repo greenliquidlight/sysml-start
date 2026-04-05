@@ -15,7 +15,7 @@
   // TODO: Change "plaintext" to your SysML2 extension's language ID once
   //       a VS Code SysML2 extension is installed.
   "files.associations": {
-    "*.sysml": "plaintext"
+    "*.sysml": "sysml"
   },
 
   // ---- Markdown preview -------------------------------------------------------

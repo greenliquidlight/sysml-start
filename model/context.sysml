@@ -90,31 +90,31 @@ package WorkflowContext {
         part ci : CISystem;
 
         // Author uses VS Code to edit model files in the repository
-        connection authorUsesVSCode : author -> vsCode;
-        connection vsCodeEditsRepo : vsCode -> repo;
+        connection authorUsesVSCode connect author to vsCode;
+        connection vsCodeEditsRepo connect vsCode to repo;
 
         // SysML2 extension augments the VS Code environment
-        connection extAugmentsVSCode : sysmlExt -> vsCode;
+        connection extAugmentsVSCode connect sysmlExt to vsCode;
 
         // Validation tool reads model files from the repository
-        connection validatorReadsRepo : validator -> repo;
+        connection validatorReadsRepo connect validator to repo;
 
         // Renderer reads model and view files from the repository;
         // produces SVG diagrams written back to the repository
-        connection rendererReadsRepo : renderer -> repo;
-        connection rendererWritesDiagrams : renderer -> repo;
+        connection rendererReadsRepo connect renderer to repo;
+        connection rendererWritesDiagrams connect renderer to repo;
 
         // Documentation builder reads docs and generated diagrams from the
         // repository; produces assembled HTML output
-        connection docBuilderReadsRepo : docBuilder -> repo;
+        connection docBuilderReadsRepo connect docBuilder to repo;
 
         // CI system orchestrates validate, render, and build
-        connection ciRunsValidator : ci -> validator;
-        connection ciRunsRenderer : ci -> renderer;
-        connection ciRunsDocBuilder : ci -> docBuilder;
+        connection ciRunsValidator connect ci to validator;
+        connection ciRunsRenderer connect ci to renderer;
+        connection ciRunsDocBuilder connect ci to docBuilder;
 
         // Reviewer consumes generated documentation and rendered diagrams
-        connection reviewerConsumesRepo : reviewer -> repo;
+        connection reviewerConsumesRepo connect reviewer to repo;
     }
 
 }

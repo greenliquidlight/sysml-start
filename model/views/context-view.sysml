@@ -14,7 +14,7 @@
 
 package ContextView {
 
-    import WorkflowContext::*;
+    public import WorkflowContext::*;
 
     // -------------------------------------------------------------------------
     // View definition
