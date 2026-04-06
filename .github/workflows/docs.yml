@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: ["**"]
 
+# Opt into Node.js 24 for all Actions now, ahead of the June 2026 forced migration.
+# See: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+# Remove this block once Node.js 24 becomes the default runner.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     name: Render Diagrams and Build Documentation
@@ -25,6 +31,11 @@ jobs:
 
       - name: Install GraphViz
         run: sudo apt-get install -y graphviz
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Make scripts executable
         run: chmod +x scripts/setup-tools scripts/render-diagrams scripts/build-docs
@@ -51,3 +62,37 @@ jobs:
           name: generated-docs
           path: generated/docs/
           if-no-files-found: warn
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Download generated docs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-docs
+          path: generated/docs/
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: generated/docs/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
