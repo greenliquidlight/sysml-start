@@ -39,9 +39,7 @@ The recommended VS Code extensions (`.vscode/extensions.json`) provide:
 **Script:** `scripts/validate-model`
 **VS Code Task:** Validate Model
 
-The validate script checks that all expected model files are present and well-formed. Currently it performs a file-existence check and echoes what would be validated.
-
-**TODO:** Replace the file-existence check with a real SysML2 validator invocation (e.g., the SysML2 Pilot Implementation CLI or another conformance checker).
+The validate script loads all model files into the OMG SysML v2 Pilot Implementation interactive kernel (`SysMLInteractive`) in dependency order, checking that every file parses without errors.
 
 A non-zero exit code from the validate script causes the GitHub Actions `validate.yml` workflow to fail, blocking the PR.
 
@@ -53,11 +51,12 @@ A non-zero exit code from the validate script causes the GitHub Actions `validat
 **VS Code Task:** Render Diagrams
 **Output:** `generated/diagrams/*.svg`
 
-The render script reads the model and view definitions and generates SVG diagrams. Currently it generates placeholder SVGs with visible labels so that documentation renders immediately.
-
-**TODO:** Replace placeholder SVG generation with calls to a real SysML2 rendering tool (e.g., the SysML2 Pilot Implementation CLI, PlantUML bridge, Graphviz, or a custom renderer).
+The render script loads the model into `SysMLInteractive`, issues `%viz` commands for each diagram element, and pipes the PlantUML output through `tools/SysMLRender.java`, which renders each block to SVG using the PlantUML library bundled in the OMG JAR.
 
 Generated SVGs are committed to the repository in `generated/diagrams/` so that documentation is always renderable without running the script locally.
+
+![Context Diagram](../generated/diagrams/context.svg)
+![Artifact Flow Diagram](../generated/diagrams/artifact-flow.svg)
 
 ---
 
@@ -69,8 +68,8 @@ Generated SVGs are committed to the repository in `generated/diagrams/` so that 
 
 The build-docs script builds a navigable HTML documentation site from the Markdown sources using
 [Sphinx](https://www.sphinx-doc.org/) with the [MyST parser](https://myst-parser.readthedocs.io/)
-and the `sphinx_rtd_theme`. The generated site includes a table of contents, search, and correctly
-rendered SVG diagrams embedded via standard Markdown image links.
+and the `sphinx_rtd_theme`. The generated site includes a table of contents, search, and the SVG
+diagrams embedded in `workflow.md` via standard Markdown image links.
 
 Dependencies are declared in `docs/requirements.txt` and installed by `scripts/setup-tools`.
 
@@ -93,12 +92,12 @@ model/views/
   artifact-flow-view.sysml   ──► generated/diagrams/artifact-flow.svg
 
 generated/diagrams/
-  context.svg         ──► embedded in docs/overview.md
-  artifact-flow.svg   ──► embedded in docs/overview.md
+  context.svg         ──► embedded in docs/workflow.md
+  artifact-flow.svg   ──► embedded in docs/workflow.md
 
 docs/
-  overview.md         ──► rendered in GitHub / VS Code preview / HTML export
-  workflow.md         ──► rendered in GitHub / VS Code preview / HTML export
+  overview.md         ──► rendered in GitHub / VS Code preview / Sphinx HTML
+  workflow.md         ──► rendered in GitHub / VS Code preview / Sphinx HTML
 ```
 
 ---
