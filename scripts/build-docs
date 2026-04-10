@@ -4,8 +4,8 @@
 # Builds HTML documentation from Markdown sources using Sphinx + MyST.
 # Output is written to generated/docs/.
 #
-# Prerequisites (installed by scripts/setup-tools):
-#   pip install -r docs/requirements.txt
+# Prerequisites:
+#   Run scripts/setup-tools  (or: SETUP_DOCS_DEPS=1 scripts/setup-tools)
 #
 # Exit codes:
 #   0 — docs built successfully
