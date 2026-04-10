@@ -64,6 +64,19 @@ to the scripts, which manage dependencies and error reporting.
 
 ---
 
+## Before Every Commit
+
+**Always run the full test pipeline and confirm all four exit 0 before staging a commit:**
+
+```
+scripts/validate-model
+scripts/render-diagrams
+SETUP_DOCS_DEPS=1 scripts/setup-tools
+scripts/build-docs
+```
+
+---
+
 ## What a Valid PR Looks Like
 
 - All `.sysml` files parse cleanly (`scripts/validate-model` exits 0)
