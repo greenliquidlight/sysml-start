@@ -151,10 +151,12 @@ else
         fi
         echo "[SKIP] pip is not available for the python3 interpreter — Sphinx dependencies not installed."
         echo "       Fix: python3 -m ensurepip --upgrade  (or activate a virtual environment)"
-    else
+    elif [ "$REQUIRE_DOCS_DEPS" = "1" ]; then
         echo "Installing Sphinx documentation dependencies..."
         python3 -m pip install --quiet -r "$REPO_ROOT/docs/requirements.txt"
         echo "[OK] Sphinx + MyST + sphinx-rtd-theme"
+    else
+        echo "[SKIP] Sphinx dependencies not installed (run: SETUP_DOCS_DEPS=1 scripts/setup-tools)."
     fi
 fi
 
