@@ -18,6 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      # Instruct setup-tools to install Sphinx/Python deps for this job.
+      SETUP_DOCS_DEPS: "1"
 
     steps:
       - name: Checkout repository

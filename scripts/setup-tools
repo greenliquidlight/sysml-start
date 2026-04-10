@@ -120,26 +120,44 @@ fi
 echo "[OK] SysMLRender.class"
 
 # ---------------------------------------------------------------------------
-# 8. Python / Sphinx (required by scripts/build-docs; optional for validate-only)
+# 8. Python / Sphinx (required by scripts/build-docs; skipped by default)
+#    Set SETUP_DOCS_DEPS=1 to make this step mandatory during setup.
 # ---------------------------------------------------------------------------
+REQUIRE_DOCS_DEPS="${SETUP_DOCS_DEPS:-0}"
+
 if ! command -v python3 >/dev/null 2>&1; then
+    if [ "$REQUIRE_DOCS_DEPS" = "1" ]; then
+        echo "ERROR: python3 not found — Sphinx dependencies were explicitly requested."
+        echo "  Fix: install Python 3.10+ and rerun with SETUP_DOCS_DEPS=1."
+        exit 1
+    fi
     echo "[SKIP] python3 not found — Sphinx dependencies not installed."
     echo "       scripts/build-docs requires Python 3.10+."
 else
     PY_MINOR=$(python3 -c "import sys; print(sys.version_info.minor)" 2>/dev/null)
     PY_MAJOR=$(python3 -c "import sys; print(sys.version_info.major)" 2>/dev/null)
     if [ "${PY_MAJOR:-0}" -lt 3 ] || { [ "${PY_MAJOR:-0}" -eq 3 ] && [ "${PY_MINOR:-0}" -lt 10 ]; }; then
-        echo "ERROR: Python ${PY_MAJOR}.${PY_MINOR} found but 3.10+ is required for Sphinx."
-        exit 1
+        if [ "$REQUIRE_DOCS_DEPS" = "1" ]; then
+            echo "ERROR: Python ${PY_MAJOR}.${PY_MINOR} found but 3.10+ is required for Sphinx."
+            exit 1
+        fi
+        echo "[SKIP] Python ${PY_MAJOR}.${PY_MINOR} found, but 3.10+ is required for Sphinx."
+        echo "       scripts/build-docs enforces this requirement when docs are built."
+    elif ! python3 -m pip --version >/dev/null 2>&1; then
+        if [ "$REQUIRE_DOCS_DEPS" = "1" ]; then
+            echo "ERROR: pip is not available for the python3 interpreter."
+            echo "  Fix: python3 -m ensurepip --upgrade  (or activate a virtual environment)"
+            exit 1
+        fi
+        echo "[SKIP] pip is not available for the python3 interpreter — Sphinx dependencies not installed."
+        echo "       Fix: python3 -m ensurepip --upgrade  (or activate a virtual environment)"
+    elif [ "$REQUIRE_DOCS_DEPS" = "1" ]; then
+        echo "Installing Sphinx documentation dependencies..."
+        python3 -m pip install --quiet -r "$REPO_ROOT/docs/requirements.txt"
+        echo "[OK] Sphinx + MyST + sphinx-rtd-theme"
+    else
+        echo "[SKIP] Sphinx dependencies not installed (run: SETUP_DOCS_DEPS=1 scripts/setup-tools)."
     fi
-    if ! python3 -m pip --version >/dev/null 2>&1; then
-        echo "ERROR: pip is not available for the python3 interpreter."
-        echo "  Fix: python3 -m ensurepip --upgrade  (or activate a virtual environment)"
-        exit 1
-    fi
-    echo "Installing Sphinx documentation dependencies..."
-    python3 -m pip install --quiet -r "$REPO_ROOT/docs/requirements.txt"
-    echo "[OK] Sphinx + MyST + sphinx-rtd-theme"
 fi
 
 echo ""

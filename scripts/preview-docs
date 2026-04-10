@@ -5,7 +5,7 @@
 # Runs scripts/render-diagrams first if no SVGs are present.
 #
 # Prerequisites:
-#   pip install -r docs/requirements.txt   (or run scripts/setup-tools once)
+#   Run scripts/setup-tools  (or: SETUP_DOCS_DEPS=1 scripts/setup-tools)
 #
 # Exit codes:
 #   0 — preview launched
@@ -23,8 +23,7 @@ INDEX="$OUTPUT_DIR/index.html"
 # ---------------------------------------------------------------------------
 if ! command -v sphinx-build >/dev/null 2>&1; then
     echo "ERROR: sphinx-build not found."
-    echo "  Run: pip install -r docs/requirements.txt"
-    echo "  Or:  scripts/setup-tools"
+    echo "  Run: SETUP_DOCS_DEPS=1 scripts/setup-tools"
     exit 1
 fi
 
