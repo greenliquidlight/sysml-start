@@ -1,17 +1,18 @@
 // SysML2 Requirements Model
 // File: model/requirements.sysml
 //
-// This file contains starter system requirements for the text-first SysML2
-// modeling workflow. Syntax is approximate SysML2; adjust as needed for your
-// tooling.
+// This file contains system requirements for the text-first SysML2
+// modeling workflow.
 
 package WorkflowRequirements {
+
+    private import Requirements::*;
 
     // -------------------------------------------------------------------------
     // Top-level requirement
     // -------------------------------------------------------------------------
 
-    requirement def WorkflowSystemRequirement {
+    requirement def WorkflowSystemRequirement :> RequirementCheck {
         doc /* The SysML2 modeling workflow system shall satisfy the following
                requirements to support systems engineers in a text-first,
                docs-as-code manner. */
@@ -27,10 +28,12 @@ package WorkflowRequirements {
                file formats required for core authoring. */
     }
 
-    requirement <'REQ-002'> vsCodeEditingRequirement : WorkflowSystemRequirement {
+    requirement <'REQ-002'> authoringRequirement : WorkflowSystemRequirement {
         doc /* The workflow shall support authoring and editing of model artifacts
-               using Visual Studio Code, with recommended extensions providing
-               syntax highlighting and task integration. */
+               using Visual Studio Code or any text editor, with recommended
+               extensions providing syntax highlighting and task integration.
+               Authoring may be performed by a human systems engineer or by an
+               AI agent drafting artifacts for human review. */
     }
 
     requirement <'REQ-003'> commandLineValidationRequirement : WorkflowSystemRequirement {
@@ -41,8 +44,8 @@ package WorkflowRequirements {
 
     requirement <'REQ-004'> renderedDiagramRequirement : WorkflowSystemRequirement {
         doc /* The workflow shall support rendering of SysML2 views as SVG
-               diagrams, with rendered output available from day 1 via
-               placeholder generation if a real renderer is not yet integrated. */
+               diagrams using an automated command-line pipeline integrated
+               with validation and documentation generation workflows. */
     }
 
     requirement <'REQ-005'> embeddedDiagramsRequirement : WorkflowSystemRequirement {
@@ -86,4 +89,18 @@ package WorkflowRequirements {
                tooling, using Markdown as the single source of truth. */
     }
 
+    requirement <'REQ-011'> documentationPublishingRequirement : WorkflowSystemRequirement {
+        doc /* The workflow shall support publishing the generated HTML
+               documentation to a hosting target (such as GitHub Pages,
+               GitLab Pages, or a self-hosted server) via an automated
+               pipeline triggered on merge to the main branch. The hosting
+               target shall be configurable without changes to the model or
+               documentation sources. */
+    }
+
+    // Roadmap note: automatic extraction of model docs into a generated
+    // reference artifact may be added in a future iteration.
+
+
+    item def Work;
 }

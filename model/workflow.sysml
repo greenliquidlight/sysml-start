@@ -15,8 +15,8 @@ package WorkflowBehavior {
     // -------------------------------------------------------------------------
 
     action def EditModel {
-        doc /* The ModelAuthor creates or modifies .sysml files in model/ and
-               model/views/ using VS Code or any text editor. Changes are
+                doc /* The ModelAuthor creates or modifies .sysml files in model/
+                             using VS Code or any text editor. Changes are
                committed to a Git feature branch. */
 
         in  : ModelRepository;   // current model state
@@ -33,10 +33,8 @@ package WorkflowBehavior {
     }
 
     action def RenderDiagrams {
-        doc /* The ViewRenderer reads model files and view definitions and
-               produces SVG diagram files in generated/diagrams/.
-               Currently generates placeholder SVGs; TODO replace with
-               real SysML2 rendering tool. */
+        doc /* The ViewRenderer reads model files and
+               produces SVG diagram files in generated/diagrams/. */
 
         in  : ModelRepository;   // model + view source files
         out : ModelRepository;   // repository updated with generated SVGs

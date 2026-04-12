@@ -72,24 +72,12 @@ generated/diagrams/requirements.svg
 Rendered in VS Code Markdown Preview / GitHub / HTML export
 ```
 
-The same pipeline applies to every view file. Adding a new view requires:
+The same pipeline applies to each diagram target configured in `scripts/render-diagrams`.
+Adding a new rendered diagram requires:
 
-1. Creating a new `model/views/<name>-view.sysml` file
+1. Choosing a model element to visualize
 2. Adding a `%viz <element>` line and output filename in `scripts/render-diagrams`
 3. Embedding the resulting SVG in the appropriate Markdown document
-
----
-
-## What is Real vs Placeholder
-
-| Item | Status |
-|------|--------|
-| `.sysml` model files | **Real** — valid SysML v2 syntax, verified by the OMG Pilot kernel |
-| `scripts/validate-model` | **Real** — loads all files into the OMG Pilot REPL, reports errors |
-| `scripts/render-diagrams` | **Real** — generates SVGs via OMG Pilot `%viz` + PlantUML Java API |
-| `scripts/build-docs` | **Real** — builds a navigable HTML site via Sphinx + MyST (`sphinx-rtd-theme`); output in `generated/docs/` |
-| Generated SVG diagrams | **Real** — laid out by GraphViz via the bundled PlantUML renderer |
-| GitHub Actions workflows | **Real** — installs Java 21 + GraphViz, runs `setup-tools`, validates/renders/builds, and deploys docs to GitHub Pages |
 
 ---
 

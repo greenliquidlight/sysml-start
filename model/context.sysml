@@ -7,33 +7,38 @@
 
 package WorkflowContext {
 
+    private import WorkflowRequirements::*;
+
     // -------------------------------------------------------------------------
     // Actors (external to the core workflow system)
     // -------------------------------------------------------------------------
 
     part def ModelAuthor {
         doc /* A systems engineer or AI agent who creates and edits SysML2
-               model artifacts. May use VS Code or any text editor. */
+               model artifacts. May use any text editor. */
     }
 
     part def Reviewer {
         doc /* A human who performs Verification and Validation of model
                artifacts via GitHub pull request review. Approves or requests
                changes before content is merged to main. */
+        satisfy humanReviewRequirement;
     }
 
     // -------------------------------------------------------------------------
     // Systems and tools
     // -------------------------------------------------------------------------
 
-    part def VSEnvironment {
-        doc /* The Visual Studio Code editing environment, including the
-               workspace configuration in .vscode/ (extensions, tasks,
-               settings). Provides the recommended authoring experience. */
+    part def TextEditor {
+        doc /* The text editor used to author model artifacts. VS Code is
+               the recommended choice (workspace configuration in .vscode/
+               provides extensions and task integration), but any text
+               editor may be used. */
+        satisfy authoringRequirement;
     }
 
     part def SysML2Extension {
-        doc /* A VS Code extension providing SysML2 language support:
+        doc /* An optional editor extension providing SysML2 language support:
                syntax highlighting, diagnostics, and/or model navigation.
                Treated as optional — the workflow functions without it. */
     }
@@ -43,18 +48,24 @@ package WorkflowContext {
                (.sysml files), documentation (Markdown), generated diagrams
                (SVG), and workflow scripts. Serves as the single source of
                truth for all model content. */
+        satisfy textStorageRequirement;
+        satisfy editorAgnosticRequirement;
     }
 
     part def ValidationTool {
         doc /* The command-line validation script (scripts/validate-model)
                and any underlying SysML2 conformance checker it invokes.
                Reads model files and reports errors. */
+        satisfy commandLineValidationRequirement;
+        satisfy portabilityRequirement;
     }
 
     part def ViewRenderer {
         doc /* The command-line render script (scripts/render-diagrams) and
                any underlying SysML2 or diagram rendering engine it invokes.
-               Reads model files and view definitions; produces SVG output. */
+               Reads model files; produces SVG output. */
+        satisfy renderedDiagramRequirement;
+        satisfy portabilityRequirement;
     }
 
     part def DocumentationBuilder {
@@ -62,12 +73,17 @@ package WorkflowContext {
                underlying document assembly tool (pandoc, mkdocs, etc.).
                Assembles Markdown sources and generated SVGs into navigable
                HTML (or PDF/docx) documentation. */
+        satisfy embeddedDiagramsRequirement;
+        satisfy exportReadinessRequirement;
+        satisfy portabilityRequirement;
     }
 
     part def CISystem {
         doc /* The GitHub Actions CI system. Runs validate-model,
                render-diagrams, and build-docs automatically on every push
                and pull request. Provides pass/fail status to the PR review. */
+        satisfy ciRenderingRequirement;
+        satisfy documentationPublishingRequirement;
     }
 
     // -------------------------------------------------------------------------
@@ -81,7 +97,7 @@ package WorkflowContext {
         part reviewer : Reviewer;
 
         // Tools and systems
-        part vsCode : VSEnvironment;
+        part editor : TextEditor;
         part sysmlExt : SysML2Extension;
         part repo : ModelRepository;
         part validator : ValidationTool;
@@ -89,12 +105,12 @@ package WorkflowContext {
         part docBuilder : DocumentationBuilder;
         part ci : CISystem;
 
-        // Author uses VS Code to edit model files in the repository
-        connection authorUsesVSCode connect author to vsCode;
-        connection vsCodeEditsRepo connect vsCode to repo;
+        // Author uses a text editor to edit model files in the repository
+        connection authorUsesEditor connect author to editor;
+        connection editorEditsRepo connect editor to repo;
 
-        // SysML2 extension augments the VS Code environment
-        connection extAugmentsVSCode connect sysmlExt to vsCode;
+        // SysML2 extension augments the editor environment
+        connection extAugmentsEditor connect sysmlExt to editor;
 
         // Validation tool reads model files from the repository
         connection validatorReadsRepo connect validator to repo;

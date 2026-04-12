@@ -62,9 +62,7 @@ build_repl_input() {
     for REL in \
         "model/requirements.sysml" \
         "model/context.sysml" \
-        "model/workflow.sysml" \
-        "model/views/context-view.sysml" \
-        "model/views/artifact-flow-view.sysml"; do
+        "model/workflow.sysml"; do
         printf '%s\n' '%'
         cat "$REPO_ROOT/$REL"
         printf '%s\n' '%'

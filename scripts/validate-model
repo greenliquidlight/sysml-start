@@ -6,14 +6,12 @@
 #
 # Run scripts/setup-tools first to download the kernel JAR and library.
 #
-# All five model files are loaded into a single JVM session in dependency
+# All model files are loaded into a single JVM session in dependency
 # order so that cross-file imports resolve correctly:
 #
-#   requirements.sysml  (no model imports)
-#   context.sysml       (no model imports)
-#   workflow.sysml      (imports WorkflowContext::*)
-#   views/context-view.sysml        (imports WorkflowContext::*)
-#   views/artifact-flow-view.sysml  (imports WorkflowContext::*, WorkflowBehavior::*)
+#   requirements.sysml   (no model imports)
+#   context.sysml        (imports WorkflowRequirements::*)
+#   workflow.sysml       (imports WorkflowContext::*)
 #
 # Each file is wrapped in the REPL's multi-line delimiter (a bare % on its
 # own line) so the entire file is parsed as a single SysML element.
@@ -50,8 +48,6 @@ MODEL_FILES=(
     "model/requirements.sysml"
     "model/context.sysml"
     "model/workflow.sysml"
-    "model/views/context-view.sysml"
-    "model/views/artifact-flow-view.sysml"
 )
 
 # Verify all expected files are present before touching the JVM
@@ -98,26 +94,31 @@ OUTPUT=$(build_repl_input | java -cp "$JAR" \
 # We also catch thrown-exception output and the VizResult error prefix.
 # ---------------------------------------------------------------------------
 ERRORS=0
+WARNINGS=0
 COUNTER=0
 
 while IFS= read -r LINE; do
     # Strip the REPL counter prefix ("1> ", "12> ", etc.)
     CLEAN=$(printf '%s' "$LINE" | sed 's/^[0-9][0-9]*> //')
 
-    # Every line after the initial header corresponds to one model file
-    # processed; lines with no content are the element tree header or blank
+    # Map counter to file name
+    FILE_IDX=$((COUNTER - 1))
+    if [ "$FILE_IDX" -ge 0 ] && [ "$FILE_IDX" -lt "${#MODEL_FILES[@]}" ]; then
+        FILE_LABEL="${MODEL_FILES[$FILE_IDX]}"
+    else
+        FILE_LABEL="(unknown)"
+    fi
+
     if printf '%s' "$CLEAN" | grep -qiE \
         'severity=ERROR|isSyntaxError=true|ERROR:|Exception.*at org\.' 2>/dev/null; then
-        # Map counter to file name
-        FILE_IDX=$((COUNTER - 1))
-        if [ "$FILE_IDX" -ge 0 ] && [ "$FILE_IDX" -lt "${#MODEL_FILES[@]}" ]; then
-            FILE_LABEL="${MODEL_FILES[$FILE_IDX]}"
-        else
-            FILE_LABEL="(unknown)"
-        fi
         echo "  [ERROR] $FILE_LABEL"
         echo "          $CLEAN"
         ERRORS=$((ERRORS + 1))
+    elif printf '%s' "$CLEAN" | grep -qiE \
+        'severity=WARNING|WARNING:' 2>/dev/null; then
+        echo "  [WARN]  $FILE_LABEL"
+        echo "          $CLEAN"
+        WARNINGS=$((WARNINGS + 1))
     fi
 
     # Increment file counter when we see a primary REPL prompt
@@ -127,7 +128,7 @@ while IFS= read -r LINE; do
 done <<< "$OUTPUT"
 
 # Report per-file OK or ERROR based on file list vs errors found
-if [ "$ERRORS" -eq 0 ]; then
+if [ "$ERRORS" -eq 0 ] && [ "$WARNINGS" -eq 0 ]; then
     for REL in "${MODEL_FILES[@]}"; do
         echo "  [OK]  $REL"
     done
@@ -136,7 +137,54 @@ fi
 echo ""
 if [ "$ERRORS" -gt 0 ]; then
     echo "Validation FAILED: $ERRORS error(s) found."
+    [ "$WARNINGS" -gt 0 ] && echo "  ($WARNINGS warning(s) also reported)"
     exit 1
 else
     echo "All ${#MODEL_FILES[@]} files validated without errors."
+    [ "$WARNINGS" -gt 0 ] && echo "  ($WARNINGS warning(s) reported)"
+fi
+
+# ---------------------------------------------------------------------------
+# Satisfaction completeness check
+#
+# Finds every named requirement usage (lines matching
+#   requirement <'REQ-NNN'> <name> )
+# then checks that each requirement name appears in a 'satisfy <name>'
+# anywhere in the model files.  Reports warnings for unsatisfied ones.
+# Does not affect the exit code — these are warnings, not errors.
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Requirement Satisfaction Check ==="
+echo ""
+
+UNSATISFIED=0
+
+# Collect all requirement names (second identifier on the requirement line)
+while IFS= read -r REQ_LINE; do
+    # Extract the requirement name token (word after the <'...'> short name)
+    REQ_NAME=$(printf '%s' "$REQ_LINE" | sed "s/.*requirement[[:space:]]*<[^>]*>[[:space:]]*//" | awk '{print $1}')
+    [ -z "$REQ_NAME" ] && continue
+
+    # Search all model files for 'satisfy <REQ_NAME>'
+    FOUND=0
+    for REL in "${MODEL_FILES[@]}"; do
+        if grep -q "satisfy[[:space:]]\+${REQ_NAME}" "$REPO_ROOT/$REL" 2>/dev/null; then
+            FOUND=1
+            break
+        fi
+    done
+
+    if [ "$FOUND" -eq 1 ]; then
+        echo "  [SAT]  $REQ_NAME"
+    else
+        echo "  [WARN] $REQ_NAME — not satisfied by any element"
+        UNSATISFIED=$((UNSATISFIED + 1))
+    fi
+done < <(grep -h "requirement[[:space:]]*<'" "$REPO_ROOT"/model/requirements.sysml)
+
+echo ""
+if [ "$UNSATISFIED" -gt 0 ]; then
+    echo "$UNSATISFIED requirement(s) have no satisfy usage (warnings only)."
+else
+    echo "All requirements are satisfied."
 fi

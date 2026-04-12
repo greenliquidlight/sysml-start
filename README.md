@@ -58,7 +58,7 @@ scripts/build-docs
 ```
 .
 ├── docs/           ← Sphinx source (overview, workflow, conf.py)
-├── model/          ← SysML2 model files and view definitions
+├── model/          ← SysML2 model files (requirements, context, workflow)
 ├── generated/      ← rendered SVGs and built HTML docs (committed)
 ├── tools/          ← SysMLRender.java + downloaded OMG kernel (gitignored)
 ├── scripts/        ← validate-model, render-diagrams, build-docs, setup-tools
