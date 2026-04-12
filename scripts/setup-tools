@@ -91,7 +91,7 @@ echo "[OK] Kernel dir: $KERNEL_DIR"
 # ---------------------------------------------------------------------------
 # 6. Verify expected artifacts
 # ---------------------------------------------------------------------------
-JAR=$(ls "$KERNEL_DIR/sysml/"*-all.jar 2>/dev/null | head -1)
+JAR=$(find "$KERNEL_DIR/sysml" -maxdepth 1 -type f -name '*-all.jar' 2>/dev/null | sort | head -1)
 LIB="$KERNEL_DIR/sysml/sysml.library"
 
 if [ -z "$JAR" ]; then
