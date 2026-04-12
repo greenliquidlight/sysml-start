@@ -23,7 +23,7 @@ Each step is implemented as a standalone shell script in `scripts/` and as a VS 
 ## Step 1: Edit
 
 **Tool:** VS Code (recommended) or any text editor
-**Files:** `model/*.sysml`
+**Files:** `model/template/*.sysml`
 
 Model artifacts are plain-text SysML2 files. There is no GUI modeling tool required. Authors edit files directly and commit changes to a Git branch.
 
@@ -83,9 +83,9 @@ every push, with versioned builds per branch and tag.
 
 ```
 model/
-  requirements.sysml  ─────────────────────────────────► (referenced in docs)
-  context.sysml       ─────────────────────────────────► generated/diagrams/context.svg
-  workflow.sysml      ─────────────────────────────────► generated/diagrams/artifact-flow.svg
+  template/requirements.sysml  ────────────────────────► (referenced in docs)
+  template/context.sysml       ────────────────────────► generated/diagrams/context.svg
+  template/workflow.sysml      ────────────────────────► generated/diagrams/artifact-flow.svg
 
 generated/diagrams/
   context.svg         ──► embedded in docs/workflow.md

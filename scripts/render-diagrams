@@ -60,9 +60,9 @@ mkdir -p "$DIAGRAMS_DIR"
 # ---------------------------------------------------------------------------
 build_repl_input() {
     for REL in \
-        "model/requirements.sysml" \
-        "model/context.sysml" \
-        "model/workflow.sysml"; do
+        "model/template/requirements.sysml" \
+        "model/template/context.sysml" \
+        "model/template/workflow.sysml"; do
         printf '%s\n' '%'
         cat "$REPO_ROOT/$REL"
         printf '%s\n' '%'

@@ -45,7 +45,7 @@ Model Files (.sysml)
                                                    docs/*.md (with embedded SVG links)
 ```
 
-Model files in `model/` are the source of truth. Views in `model/views/` define which diagram
+Model files in `model/template/` are the source of truth for the starter project payload. Views in `model/views/` define which diagram
 perspectives are rendered. The `scripts/render-diagrams` script reads the model and view
 definitions and produces SVG files. The `scripts/build-docs` script assembles those SVGs and the
 Markdown documents into a navigable HTML output.
@@ -55,7 +55,7 @@ Markdown documents into a navigable HTML output.
 ## Rendering Pipeline
 
 ```
-model/*.sysml + model/views/*.sysml
+model/template/*.sysml + model/views/*.sysml
          │
          │  SysMLInteractive REPL (OMG SysML v2 Pilot JAR)
          │  %viz <element>  →  @startuml...@enduml (PlantUML + sysmlbw skin)

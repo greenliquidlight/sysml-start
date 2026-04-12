@@ -24,7 +24,7 @@ via GitHub PR before anything reaches `main`.
 ## Repository Layout
 
 ```
-model/          ← SysML2 source files (edit these)
+model/template/ ← SysML2 source files (edit these)
 model/views/    ← view definitions (edit these)
 docs/           ← Sphinx Markdown sources (edit these)
 generated/      ← rendered output (SVGs + HTML); commit after rendering
@@ -39,7 +39,7 @@ tools/          ← downloaded/compiled artifacts; mostly gitignored
 
 See [docs/workflow.md](docs/workflow.md) for the full description. In brief:
 
-1. **Edit** — modify `.sysml` files in `model/` or `model/views/`
+1. **Edit** — modify `.sysml` files in `model/template/` or `model/views/`
 2. **Validate** — `scripts/validate-model` (must pass before opening a PR)
 3. **Render** — `scripts/render-diagrams` (commit updated SVGs in `generated/diagrams/`)
 4. **Build** — `scripts/build-docs` (commit updated HTML in `generated/docs/`)
