@@ -22,41 +22,47 @@ package WorkflowRequirements {
     // Functional requirements
     // -------------------------------------------------------------------------
 
-    requirement <'REQ-001'> textStorageRequirement : WorkflowSystemRequirement {
-        doc /* The workflow shall store all model artifacts as plain text files
+    requirement textStorageRequirement : WorkflowSystemRequirement {
+        doc /* REQ-001
+               The workflow shall store all model artifacts as plain text files
                committed to a Git repository, with no binary or proprietary
                file formats required for core authoring. */
     }
 
-    requirement <'REQ-002'> authoringRequirement : WorkflowSystemRequirement {
-        doc /* The workflow shall support authoring and editing of model artifacts
+    requirement authoringRequirement : WorkflowSystemRequirement {
+        doc /* REQ-002
+               The workflow shall support authoring and editing of model artifacts
                using Visual Studio Code or any text editor, with recommended
                extensions providing syntax highlighting and task integration.
                Authoring may be performed by a human systems engineer or by an
                AI agent drafting artifacts for human review. */
     }
 
-    requirement <'REQ-003'> commandLineValidationRequirement : WorkflowSystemRequirement {
-        doc /* The workflow shall support command-line validation of model files
+    requirement commandLineValidationRequirement : WorkflowSystemRequirement {
+        doc /* REQ-003
+               The workflow shall support command-line validation of model files
                via a standalone executable script that returns a non-zero exit
                code on validation failure. */
     }
 
-    requirement <'REQ-004'> renderedDiagramRequirement : WorkflowSystemRequirement {
-        doc /* The workflow shall support rendering of SysML2 views as SVG
+    requirement renderedDiagramRequirement : WorkflowSystemRequirement {
+        doc /* REQ-004
+               The workflow shall support rendering of SysML2 views as SVG
                diagrams using an automated command-line pipeline integrated
                with validation and documentation generation workflows. */
     }
 
-    requirement <'REQ-005'> embeddedDiagramsRequirement : WorkflowSystemRequirement {
-        doc /* The workflow shall support embedding rendered SVG diagrams as
+    requirement embeddedDiagramsRequirement : WorkflowSystemRequirement {
+        doc /* REQ-005
+               The workflow shall support embedding rendered SVG diagrams as
                images in Markdown documentation files using relative file paths,
                enabling inline diagram viewing in GitHub, VS Code, and HTML
                exports. */
     }
 
-    requirement <'REQ-006'> ciRenderingRequirement : WorkflowSystemRequirement {
-        doc /* The workflow shall support automated rendering of diagrams and
+    requirement ciRenderingRequirement : WorkflowSystemRequirement {
+        doc /* REQ-006
+               The workflow shall support automated rendering of diagrams and
                assembly of documentation in a GitHub Actions CI pipeline,
                triggered on every push and pull request. */
     }
@@ -65,32 +71,37 @@ package WorkflowRequirements {
     // Non-functional / quality requirements
     // -------------------------------------------------------------------------
 
-    requirement <'REQ-007'> editorAgnosticRequirement : WorkflowSystemRequirement {
-        doc /* The workflow should remain usable from any text editor other than
+    requirement editorAgnosticRequirement : WorkflowSystemRequirement {
+        doc /* REQ-007
+               The workflow should remain usable from any text editor other than
                VS Code, with no editing steps that require the VS Code GUI or
                extensions to function correctly. */
     }
 
-    requirement <'REQ-008'> portabilityRequirement : WorkflowSystemRequirement {
-        doc /* All command-line scripts shall use portable POSIX shell syntax
+    requirement portabilityRequirement : WorkflowSystemRequirement {
+        doc /* REQ-008
+               All command-line scripts shall use portable POSIX shell syntax
                (/usr/bin/env sh) so they can be executed on Linux, macOS, and
                Windows (WSL) without modification. */
     }
 
-    requirement <'REQ-009'> humanReviewRequirement : WorkflowSystemRequirement {
-        doc /* The workflow shall provide a structured GitHub pull request
+    requirement humanReviewRequirement : WorkflowSystemRequirement {
+        doc /* REQ-009
+               The workflow shall provide a structured GitHub pull request
                review process that serves as the Verification and Validation
                gate before model changes are merged to the main branch. */
     }
 
-    requirement <'REQ-010'> exportReadinessRequirement : WorkflowSystemRequirement {
-        doc /* The documentation build shall be structured to support future
+    requirement exportReadinessRequirement : WorkflowSystemRequirement {
+        doc /* REQ-010
+               The documentation build shall be structured to support future
                export to HTML, PDF, and docx formats via pandoc or equivalent
                tooling, using Markdown as the single source of truth. */
     }
 
-    requirement <'REQ-011'> documentationPublishingRequirement : WorkflowSystemRequirement {
-        doc /* The workflow shall support publishing the generated HTML
+    requirement documentationPublishingRequirement : WorkflowSystemRequirement {
+        doc /* REQ-011
+               The workflow shall support publishing the generated HTML
                documentation to a hosting target (such as GitHub Pages,
                GitLab Pages, or a self-hosted server) via an automated
                pipeline triggered on merge to the main branch. The hosting
@@ -101,6 +112,7 @@ package WorkflowRequirements {
     // Roadmap note: automatic extraction of model docs into a generated
     // reference artifact may be added in a future iteration.
 
-
-    item def Work;
+    item def Work {
+        doc /* A generic work item artifact used in example model flows. */
+    }
 }
